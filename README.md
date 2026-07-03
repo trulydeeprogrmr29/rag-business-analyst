@@ -19,7 +19,7 @@ The system retrieves the exact pages, cites sources, and explains its reasoning 
 
 ---
 
-[RAG_BUSINESS_ANALYST](image-1.png)
+![RAG Business Analyst Demo](assets/demo.png)
 
 ## Architecture
 
