@@ -1,0 +1,23 @@
+# Document Loading & Chunking
+langchain
+langchain-community
+langchain-text-splitters
+langchain-pypdf
+pypdf
+
+# Embeddings (local, free)
+sentence-transformers
+langchain-huggingface
+
+# Vector Database
+chromadb
+langchain-chroma
+
+# LLM
+groq
+
+# Utilities
+python-dotenv
+
+# UI 
+streamlit
