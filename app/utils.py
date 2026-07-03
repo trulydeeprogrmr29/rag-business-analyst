@@ -7,6 +7,7 @@ from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 from groq import Groq
+import tempfile
 
 load_dotenv()
 
@@ -14,6 +15,19 @@ VECTORSTORE_DIR = "vectorstore"
 DATA_DIR = "data"
 
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+def get_session_data_dir():
+    """
+    WHY tempfile: creates a unique folder per session
+    so users never see each other's uploaded files
+    """
+    if "session_data_dir" not in st.session_state:
+        st.session_state.session_data_dir = tempfile.mkdtemp()
+    return st.session_state.session_data_dir
+
+def get_session_vectorstore_dir():
+    if "session_vectorstore_dir" not in st.session_state:
+        st.session_state.session_vectorstore_dir = tempfile.mkdtemp()
+    return st.session_state.session_vectorstore_dir
 
 @st.cache_resource
 def get_embeddings():
@@ -23,18 +37,23 @@ def get_embeddings():
 
 @st.cache_resource
 def load_vectorstore():
+    # On cloud, no pre-existing vectorstore — return None
+    vectorstore_dir = st.session_state.get("session_vectorstore_dir")
+    if not vectorstore_dir or not os.path.exists(vectorstore_dir):
+        return None
     embeddings = get_embeddings()
-    vectorstore = Chroma(
-        persist_directory=VECTORSTORE_DIR,
+    return Chroma(
+        persist_directory=vectorstore_dir,
         embedding_function=embeddings
     )
-    return vectorstore
 
 def ingest_and_embed(uploaded_files):
-    os.makedirs(DATA_DIR, exist_ok=True)
+    data_dir = get_session_data_dir()
+    vectorstore_dir = get_session_vectorstore_dir()
 
+    # Save uploaded files to session temp folder
     for uploaded_file in uploaded_files:
-        save_path = os.path.join(DATA_DIR, uploaded_file.name)
+        save_path = os.path.join(data_dir, uploaded_file.name)
         with open(save_path, "wb") as f:
             f.write(uploaded_file.read())
 
@@ -43,28 +62,27 @@ def ingest_and_embed(uploaded_files):
         chunk_size=1000,
         chunk_overlap=150
     )
-    for filename in os.listdir(DATA_DIR):
+    for filename in os.listdir(data_dir):
         if filename.endswith(".pdf"):
-            filepath = os.path.join(DATA_DIR, filename)
+            filepath = os.path.join(data_dir, filename)
             loader = PyPDFLoader(filepath)
             pages = loader.load()
             chunks = splitter.split_documents(pages)
             all_chunks.extend(chunks)
 
-    if os.path.exists(VECTORSTORE_DIR):
-        shutil.rmtree(VECTORSTORE_DIR)
+    # Clear old vectorstore
+    if os.path.exists(vectorstore_dir):
+        shutil.rmtree(vectorstore_dir)
 
     embeddings = get_embeddings()
     vectorstore = Chroma.from_documents(
         documents=all_chunks,
         embedding=embeddings,
-        persist_directory=VECTORSTORE_DIR
+        persist_directory=vectorstore_dir
     )
-
-    # Clear cache so load_vectorstore reloads fresh
     load_vectorstore.clear()
-
     return vectorstore, len(all_chunks)
+
 
 def get_retriever(vectorstore, k=6):
     return vectorstore.as_retriever(
@@ -127,6 +145,9 @@ def ask(question: str, retriever) -> dict:
     }
 
 def list_documents():
-    if not os.path.exists(DATA_DIR):
+    if "session_data_dir" not in st.session_state:
         return []
-    return [f for f in os.listdir(DATA_DIR) if f.endswith(".pdf")]
+    data_dir = st.session_state.session_data_dir
+    if not os.path.exists(data_dir):
+        return []
+    return [f for f in os.listdir(data_dir) if f.endswith(".pdf")]

@@ -28,9 +28,6 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 if "vectorstore" not in st.session_state:
-    if os.path.exists("vectorstore"):
-        st.session_state.vectorstore = load_vectorstore()
-    else:
         st.session_state.vectorstore = None
 
 # ── Sidebar ───────────────────────────────────────
