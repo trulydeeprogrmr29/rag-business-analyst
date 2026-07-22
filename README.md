@@ -67,17 +67,6 @@ rag-business-analyst/
 
 ---
 
-## ⚠️ Before pushing to GitHub
-
-Create a `.gitignore` file:
-.env
-vectorstore/
-data/
-.venv/
-pycache/
-*.pyc
-> Never commit your API keys or PDF files.
-
 ## ⚙️ Tech Stack
 
 | Component | Technology | Why |
