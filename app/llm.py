@@ -43,9 +43,9 @@ def ask(question: str, retriever) -> dict:
 
     # Step 3 - Ask Groq
     response = client.chat.completions.create(
-        model="openai/gpt-oss-120b",   
+        model="llama-3.3-70b-specdec",   
         # WHY this model:
-        # - 120B parameters = strong reasoning
+        # - 70B parameters = strong reasoning
         # - Free tier on Groq
         # - Fast inference (Groq's specialty)
         messages=[
