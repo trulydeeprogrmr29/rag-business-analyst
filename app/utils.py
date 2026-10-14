@@ -123,7 +123,7 @@ def ask(question: str, retriever) -> dict:
     prompt = build_prompt(question, chunks)
 
     response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         messages=[
             {"role": "system", "content": "You are a professional business analyst."},
             {"role": "user", "content": prompt}
